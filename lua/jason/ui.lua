@@ -1,30 +1,71 @@
+-- lua/jason/ui.lua
 local M = {}
-
 M.backend = nil
 
--- Define custom highlight groups for the modern UI
+local C = {
+  bg       = '#1e1e2e',
+  bg2      = '#181825',
+  bg3      = '#11111b',
+  surface0 = '#313244',
+  surface1 = '#45475a',
+  surface2 = '#585b70',
+  text     = '#cdd6f4',
+  sub1     = '#bac2de',
+  sub0     = '#a6adc8',
+  ov0      = '#6c7086',
+  ov1      = '#7f849c',
+  blue     = '#89b4fa',
+  mauve    = '#cba6f7',
+  lavender = '#b4befe',
+  green    = '#a6e3a1',
+  yellow   = '#f9e2af',
+  peach    = '#fab387',
+  red      = '#f38ba8',
+  sky      = '#89dceb',
+  teal     = '#94e2d5',
+  pink     = '#f5c2e7',
+}
+
 local function setup_highlights()
-  vim.api.nvim_set_hl(0, 'MarvinSelected', { bg = '#9370db', fg = '#ffffff', bold = true })
-  vim.api.nvim_set_hl(0, 'MarvinNormal', { bg = '#1e1e2e', fg = '#cdd6f4' })
-  vim.api.nvim_set_hl(0, 'MarvinBorder', { fg = '#6c7086' })
-  vim.api.nvim_set_hl(0, 'MarvinTitle', { fg = '#cba6f7', bold = true })
-  vim.api.nvim_set_hl(0, 'MarvinIcon', { fg = '#f5c2e7' })
-  vim.api.nvim_set_hl(0, 'MarvinDesc', { fg = '#6c7086' })
-  vim.api.nvim_set_hl(0, 'MarvinSeparator', { fg = '#45475a' })
-  vim.api.nvim_set_hl(0, 'MarvinSearch', { fg = '#89dceb', italic = true })
-  vim.api.nvim_set_hl(0, 'MarvinCounter', { fg = '#94e2d5' })
+  local function hl(n, o) vim.api.nvim_set_hl(0, n, o) end
+  hl('JasonWin', { bg = C.bg, fg = C.text })
+  hl('JasonBorder', { fg = C.surface1, bg = C.bg })
+  hl('JasonTitle', { fg = C.mauve, bold = true })
+  hl('JasonCursorLine', { bg = C.surface0, fg = C.text })
+  hl('JasonSelected', { bg = C.mauve, fg = C.bg, bold = true })
+  hl('JasonItem', { fg = C.sub1 })
+  hl('JasonItemIcon', { fg = C.text })
+  hl('JasonDesc', { fg = C.ov0 })
+  hl('JasonSepLine', { fg = C.surface1 })
+  hl('JasonSepLabel', { fg = C.ov1, italic = true })
+  hl('JasonSearch', { fg = C.sky, bold = true })
+  hl('JasonSearchBox', { fg = C.ov0 })
+  hl('JasonFooter', { fg = C.ov0 })
+  hl('JasonFooterKey', { fg = C.peach, bold = true })
+  hl('JasonBadge', { fg = C.yellow })
+  hl('JasonPrevWin', { bg = C.bg3, fg = C.text })
+  hl('JasonPrevBorder', { fg = C.surface0, bg = C.bg3 })
+  hl('JasonPrevTitle', { fg = C.blue, bold = true })
+  hl('JasonPrevHdr', { fg = C.blue, bold = true })
+  hl('JasonPrevSep', { fg = C.surface1 })
+  hl('JasonGitHash', { fg = C.mauve })
+  hl('JasonGitDate', { fg = C.ov0 })
+  hl('JasonGitAuthor', { fg = C.peach })
+  hl('JasonGitMsg', { fg = C.sub1 })
+  hl('JasonBranch', { fg = C.green, bold = true })
+  hl('JasonDirty', { fg = C.yellow })
+  hl('JasonFileDir', { fg = C.blue })
+  hl('JasonFileNorm', { fg = C.sub0 })
+  hl('JasonFileExe', { fg = C.green })
+  hl('JasonDiffAdd', { fg = C.green })
+  hl('JasonDiffDel', { fg = C.red })
+  hl('JasonDiffMod', { fg = C.yellow })
+  hl('JasonTreeConn', { fg = C.surface2 })
 end
 
-
 function M.init()
-  local config = require('marvin').config
-  if config.ui_backend == 'auto' then
-    M.backend = M.detect_backend()
-  else
-    M.backend = config.ui_backend
-  end
-
-  -- Setup custom highlights
+  local cfg = require('jason').config
+  M.backend = cfg.ui_backend == 'auto' and M.detect_backend() or cfg.ui_backend
   setup_highlights()
 end
 
@@ -38,826 +79,674 @@ function M.detect_backend()
   end
 end
 
--- Modern popup with rounded borders
-local function create_popup(title, width, height, opts)
-  opts = opts or {}
-  local buf = vim.api.nvim_create_buf(false, true)
-  local ui = vim.api.nvim_list_uis()[1]
-
-  local win_width = width > 1 and width or math.floor(width * ui.width)
-  local win_height = height > 1 and height or math.floor(height * ui.height)
-  local row = math.floor((ui.height - win_height) / 2)
-  local col = math.floor((ui.width - win_width) / 2)
-
-  local win_opts = {
-    relative = 'editor',
-    width = win_width,
-    height = win_height,
-    row = row,
-    col = col,
-    style = 'minimal',
-    border = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
-    title = title and { { ' ' .. title .. ' ', 'FloatTitle' } } or nil,
-    title_pos = 'left',
-  }
-
-  local win = vim.api.nvim_open_win(buf, true, win_opts)
-
-  -- Modern styling
-  vim.api.nvim_set_option_value('winhl', 'Normal:MarvinNormal,FloatBorder:MarvinBorder', { win = win })
-  vim.api.nvim_set_option_value('cursorline', false, { win = win })
-  vim.api.nvim_set_option_value('wrap', false, { win = win })
-  vim.api.nvim_set_option_value('number', false, { win = win })
-  vim.api.nvim_set_option_value('relativenumber', false, { win = win })
-
-  vim.api.nvim_set_option_value('modifiable', false, { buf = buf })
-  vim.api.nvim_set_option_value('buftype', 'nofile', { buf = buf })
-  vim.api.nvim_set_option_value('bufhidden', 'wipe', { buf = buf })
-  vim.api.nvim_set_option_value('swapfile', false, { buf = buf })
-
-  return buf, win
-end
-
--- Fuzzy search with scoring
-local function fuzzy_match(str, pattern)
-  if pattern == '' then return true, 0 end
-
-  str = str:lower()
-  pattern = pattern:lower()
-
-  local score = 0
-  local str_idx = 1
-  local pattern_idx = 1
-  local consecutive = 0
-
-  while pattern_idx <= #pattern and str_idx <= #str do
-    if str:sub(str_idx, str_idx) == pattern:sub(pattern_idx, pattern_idx) then
-      score = score + 1 + consecutive * 5
-      consecutive = consecutive + 1
-      pattern_idx = pattern_idx + 1
+-- Fuzzy match
+local function fuzzy(str, pat)
+  if pat == '' then return true, 0 end
+  str = str:lower(); pat = pat:lower()
+  local sc, s, p, con = 0, 1, 1, 0
+  while p <= #pat and s <= #str do
+    if str:sub(s, s) == pat:sub(p, p) then
+      sc = sc + 1 + con * 5; con = con + 1; p = p + 1
     else
-      consecutive = 0
+      con = 0
     end
-    str_idx = str_idx + 1
+    s = s + 1
   end
-
-  if pattern_idx > #pattern then
-    if str:sub(1, #pattern) == pattern then
-      score = score + 20
-    end
-    return true, score
+  if p > #pat then
+    if str:sub(1, #pat) == pat then sc = sc + 20 end
+    return true, sc
   end
-
   return false, 0
 end
 
--- Enhanced select with fuzzy search and compact display
-function M.popup_select(items, opts, callback)
-  opts = opts or {}
-  local prompt = opts.prompt or 'Select'
-  local enable_search = opts.enable_search or false
-  local on_back = opts.on_back or nil -- Callback for back navigation
-  local format_fn = opts.format_item or function(item)
-    if type(item) == 'table' then
-      return item.label or item.name or tostring(item)
+-- Git helpers
+local function git(root, args)
+  local out = vim.fn.system(
+    'git -C ' .. vim.fn.shellescape(root) .. ' ' .. args .. ' 2>/dev/null')
+  return vim.v.shell_error == 0, vim.trim(out)
+end
+
+-- File tree (neo-tree style ASCII connectors)
+local SKIP = {
+  ['.git'] = true,
+  ['node_modules'] = true,
+  ['target'] = true,
+  ['build'] = true,
+  ['.gradle'] = true,
+  ['__pycache__'] = true,
+  ['.idea'] = true,
+  ['.vscode'] = true,
+  ['dist'] = true,
+  ['out'] = true,
+}
+
+local function build_tree(dir, prefix, depth, max_depth, results)
+  results = results or {}
+  if depth > max_depth then return results end
+
+  local ok, ents = pcall(vim.fn.readdir, dir)
+  if not ok or type(ents) ~= 'table' then return results end
+
+  table.sort(ents, function(a, b)
+    local ad = vim.fn.isdirectory(dir .. '/' .. a) == 1
+    local bd = vim.fn.isdirectory(dir .. '/' .. b) == 1
+    local ah = a:sub(1, 1) == '.'
+    local bh = b:sub(1, 1) == '.'
+    if ah ~= bh then return bh end
+    if ad ~= bd then return ad end
+    return a < b
+  end)
+
+  local visible = {}
+  for _, name in ipairs(ents) do
+    if not SKIP[name] and (depth == 1 or name:sub(1, 1) ~= '.') then
+      visible[#visible + 1] = name
     end
-    return tostring(item)
   end
 
-  -- Format items
-  local formatted_items = {}
-  for i, item in ipairs(items) do
-    table.insert(formatted_items, {
-      index = i,
-      item = item,
-      display = format_fn(item),
-      desc = type(item) == 'table' and item.desc or nil,
-      icon = type(item) == 'table' and item.icon or nil,
-      is_separator = type(item) == 'table' and item.is_separator or false,
+  local cap = 12
+  local shown = 0
+  for i, name in ipairs(visible) do
+    if shown >= cap then
+      local conn = prefix .. '+- '
+      results[#results + 1] = {
+        text     = conn .. '... ' .. (#visible - cap) .. ' more',
+        conn_end = #conn,
+        is_dir   = false,
+        is_exe   = false,
+        overflow = true,
+      }
+      break
+    end
+    shown                 = shown + 1
+
+    local is_last         = (i == #visible or shown == cap)
+    local fp              = dir .. '/' .. name
+    local is_dir          = vim.fn.isdirectory(fp) == 1
+    local is_exe          = not is_dir and vim.fn.executable(fp) == 1
+    local icon            = is_dir and '[d] ' or '[f] '
+    local branch          = is_last and '`- ' or '+- '
+    local conn            = prefix .. branch
+    local text            = conn .. icon .. name .. (is_dir and '/' or '')
+
+    results[#results + 1] = {
+      text     = text,
+      conn_end = #conn,
+      is_dir   = is_dir,
+      is_exe   = is_exe,
+    }
+
+    if is_dir and depth < max_depth then
+      local child_pfx = prefix .. (is_last and '  ' or '| ')
+      build_tree(fp, child_pfx, depth + 1, max_depth, results)
+    end
+  end
+
+  return results
+end
+
+-- Build preview content
+local function build_preview(project, width)
+  local root = project and project.root
+  local lines, hls = {}, {}
+
+  local function add(ln, specs)
+    lines[#lines + 1] = ln
+    if specs then
+      for _, s in ipairs(specs) do
+        hls[#hls + 1] = { line = #lines - 1, hl = s[1], cs = s[2], ce = s[3] }
+      end
+    end
+  end
+
+  local function hr()
+    add(string.rep('-', width), { { 'JasonPrevSep', 0, -1 } })
+  end
+
+  local function hdr(t)
+    add(t, { { 'JasonPrevHdr', 0, -1 } })
+  end
+
+  local IND = ' '
+
+  if not root then
+    add(IND .. 'No project.', { { 'JasonDesc', 0, -1 } })
+    return lines, hls
+  end
+
+  -- Branch line (no leading blank)
+  local gok, branch = git(root, 'branch --show-current')
+  local is_git = gok and branch ~= ''
+
+  if is_git then
+    local _, st = git(root, 'status --porcelain')
+    local dirty = st ~= ''
+    local sign  = dirty and ' ~ dirty' or ' + clean'
+    local shl   = dirty and 'JasonDirty' or 'JasonBranch'
+    local pfx   = IND .. '@ '
+    local ln    = pfx .. branch .. sign
+    add(ln, {
+      { 'JasonDesc',   0,              #pfx },
+      { 'JasonBranch', #pfx,           #pfx + #branch },
+      { shl,           #pfx + #branch, -1 },
     })
-  end
-
-  local filtered_items = vim.deepcopy(formatted_items)
-  local search_term = ''
-  local current_idx = 1
-
-  -- Find first non-separator item
-  local function find_next_selectable(start_idx, direction)
-    local idx = start_idx
-    local count = #filtered_items
-
-    for _ = 1, count do
-      if not filtered_items[idx].is_separator then
-        return idx
-      end
-
-      if direction == 'down' then
-        idx = idx % count + 1
-      else
-        idx = idx - 1
-        if idx < 1 then idx = count end
-      end
-    end
-
-    return start_idx
-  end
-
-  -- Initialize to first selectable item
-  current_idx = find_next_selectable(1, 'down')
-
-  -- Calculate dynamic window height based on content
-  local function calculate_window_height()
-    local base_lines = 0
-
-    -- Search bar (if enabled)
-    if enable_search then
-      base_lines = base_lines + 3 -- empty line, search bar, separator
-    else
-      base_lines = base_lines + 1 -- just empty line
-    end
-
-    -- Items
-    base_lines = base_lines + #filtered_items
-
-    -- Footer
-    base_lines = base_lines + 5 -- empty, separator, count, nav help, empty
-
-    -- Add some padding
-    local total_height = base_lines + 2
-
-    -- Constrain to reasonable bounds
-    local min_height = 10
-    local max_height = math.floor(vim.o.lines * 0.8)
-
-    return math.max(min_height, math.min(total_height, max_height))
-  end
-
-  -- Create window with dynamic height
-  local win_height = calculate_window_height()
-  local buf, win = create_popup(prompt, 80, win_height)
-
-  -- Calculate max label width for alignment
-  local function calculate_max_label_width()
-    local max_width = 0
-    for _, formatted in ipairs(filtered_items) do
-      if not formatted.is_separator and formatted.desc then
-        local indicator_len = 2                    -- "▶ " or "  "
-        local icon_len = formatted.icon and 2 or 0 -- icon + space
-        local label_len = vim.fn.strdisplaywidth(formatted.display)
-        local total = indicator_len + icon_len + label_len
-        if total > max_width then
-          max_width = total
-        end
-      end
-    end
-    return max_width + 4 -- Add padding for " • "
-  end
-
-  -- Render function
-  local function render()
-    local lines = {}
-    local highlights = {}
-
-    if enable_search then
-      -- Search bar
-      table.insert(lines, '')
-      local search_display = search_term == '' and '  _' or '  ' .. search_term .. '_'
-      table.insert(lines, search_display)
-      table.insert(highlights,
-        { line = #lines - 1, hl_group = search_term == '' and 'Comment' or '@string', col_start = 0, col_end = -1 })
-
-      table.insert(lines, '  ' .. string.rep('─', 76))
-      table.insert(highlights, { line = #lines - 1, hl_group = 'MarvinSeparator', col_start = 0, col_end = -1 })
-    else
-      table.insert(lines, '')
-    end
-
-    -- Items (COMPACT - no blank lines)
-    local selectable = {}
-    local item_map = {}
-    local align_col = calculate_max_label_width()
-
-    if #filtered_items == 0 then
-      table.insert(lines, '')
-      table.insert(lines, '  ❌ No matches found')
-      table.insert(highlights, { line = #lines - 1, hl_group = 'WarningMsg', col_start = 0, col_end = -1 })
-    else
-      for i, formatted in ipairs(filtered_items) do
-        local line_num = #lines + 1
-
-        if formatted.is_separator then
-          -- Separator rendering - full width
-          table.insert(lines, string.rep('─', 78))
-          table.insert(highlights, { line = line_num - 1, hl_group = 'MarvinSeparator', col_start = 0, col_end = -1 })
-
-          -- Add separator text centered
-          if formatted.display and formatted.display ~= '' then
-            -- Extract text from separator (remove existing dashes and trim)
-            local sep_text = formatted.display:gsub('─', ''):gsub('^%s+', ''):gsub('%s+$', '')
-            sep_text = ' ' .. sep_text .. ' '
-            local text_width = vim.fn.strdisplaywidth(sep_text)
-            local start_pos = math.floor((78 - text_width) / 2)
-
-            -- Replace part of the line with text
-            lines[#lines] = string.rep('─', start_pos) .. sep_text .. string.rep('─', 78 - start_pos - text_width)
-            table.insert(highlights, { line = line_num - 1, hl_group = 'MarvinDesc', col_start = 0, col_end = -1 })
-          end
-        else
-          local is_selected = i == current_idx
-
-          -- Selection indicator
-          local indicator = is_selected and '» ' or '  '
-          local icon_str = formatted.icon and (formatted.icon .. ' ') or ''
-          local label_part = indicator .. icon_str .. formatted.display
-
-          -- Calculate padding needed for alignment
-          local current_width = vim.fn.strdisplaywidth(label_part)
-          local padding = align_col - current_width
-
-          if formatted.desc then
-            -- Aligned description
-            local line_content = label_part .. string.rep(' ', padding) .. '• ' .. formatted.desc
-            table.insert(lines, line_content)
-
-            -- Store description start position for highlighting
-            local desc_start = align_col + 2 -- position after "• "
-
-            table.insert(selectable, line_num)
-            item_map[line_num] = formatted
-
-            -- Highlight selected item
-            if is_selected then
-              table.insert(highlights, { line = line_num - 1, hl_group = 'MarvinSelected', col_start = 0, col_end = -1 })
-              table.insert(highlights, { line = line_num - 1, hl_group = 'MarvinIcon', col_start = 0, col_end = 2 })
-            else
-              table.insert(highlights, { line = line_num - 1, hl_group = 'Normal', col_start = 0, col_end = -1 })
-            end
-
-            -- Highlight description
-            table.insert(highlights,
-              { line = line_num - 1, hl_group = 'MarvinDesc', col_start = align_col, col_end = -1 })
-          else
-            -- No description - just the label
-            table.insert(lines, label_part)
-            table.insert(selectable, line_num)
-            item_map[line_num] = formatted
-
-            -- Highlight selected item
-            if is_selected then
-              table.insert(highlights, { line = line_num - 1, hl_group = 'MarvinSelected', col_start = 0, col_end = -1 })
-              table.insert(highlights, { line = line_num - 1, hl_group = 'MarvinIcon', col_start = 0, col_end = 2 })
-            else
-              table.insert(highlights, { line = line_num - 1, hl_group = 'Normal', col_start = 0, col_end = -1 })
-            end
-          end
-        end
-
-        -- NO blank line between items for maximum compactness
-      end
-    end
-
-    -- Footer
-    table.insert(lines, '')
-    table.insert(lines, '  ' .. string.rep('─', 76))
-    table.insert(highlights, { line = #lines - 1, hl_group = 'MarvinSeparator', col_start = 0, col_end = -1 })
-
-    local count_text = string.format('  %d/%d items', #filtered_items, #formatted_items)
-    table.insert(lines, count_text)
-    table.insert(highlights, { line = #lines - 1, hl_group = 'MarvinDesc', col_start = 0, col_end = -1 })
-
-    table.insert(lines, '  ↑↓ Navigate │ Enter Select │ Esc Cancel' .. (on_back and ' │ ⌫ Back' or ''))
-    table.insert(highlights, { line = #lines - 1, hl_group = 'MarvinDesc', col_start = 0, col_end = -1 })
-    table.insert(lines, '')
-
-    return lines, selectable, item_map, highlights
-  end
-
-  local lines, selectable, item_map, highlights = render()
-
-  -- Update display
-  local function update_display()
-    vim.api.nvim_set_option_value('modifiable', true, { buf = buf })
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-    vim.api.nvim_set_option_value('modifiable', false, { buf = buf })
-
-    -- Apply highlights
-    local ns = vim.api.nvim_create_namespace('marvin_select')
-    vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
-
-    for _, hl in ipairs(highlights) do
-      vim.api.nvim_buf_add_highlight(buf, ns, hl.hl_group, hl.line, hl.col_start, hl.col_end)
-    end
-
-    -- Smooth scroll to current item
-    if #selectable > 0 and current_idx <= #filtered_items then
-      -- Find the line number for current_idx
-      for line_num, formatted in pairs(item_map) do
-        if formatted.index == filtered_items[current_idx].index then
-          pcall(vim.api.nvim_win_set_cursor, win, { line_num, 0 })
-          break
-        end
-      end
-    end
-  end
-
-  -- Update search and filter
-  local function update_search(char)
-    if char == '<BS>' then
-      search_term = search_term:sub(1, -2)
-    elseif char == '<C-u>' then
-      search_term = ''
-    else
-      search_term = search_term .. char
-    end
-
-    -- Fuzzy filter with scoring
-    filtered_items = {}
-    for _, formatted in ipairs(formatted_items) do
-      local matches, score = fuzzy_match(formatted.display, search_term)
-      if matches then
-        formatted.score = score
-        table.insert(filtered_items, formatted)
-      end
-    end
-
-    -- Sort by score
-    table.sort(filtered_items, function(a, b)
-      return (a.score or 0) > (b.score or 0)
-    end)
-
-    current_idx = math.min(current_idx, #filtered_items)
-    if current_idx == 0 and #filtered_items > 0 then
-      current_idx = 1
-    end
-
-    -- Ensure we're on a selectable item
-    current_idx = find_next_selectable(current_idx, 'down')
-
-    -- Recalculate window height based on filtered results
-    local new_height = calculate_window_height()
-    if vim.api.nvim_win_is_valid(win) then
-      vim.api.nvim_win_set_height(win, new_height)
-    end
-
-    lines, selectable, item_map, highlights = render()
-    update_display()
-  end
-
-  -- Initial display
-  update_display()
-
-  -- Selection handler
-  local function select()
-    if #filtered_items == 0 or filtered_items[current_idx].is_separator then return end
-
-    local formatted = filtered_items[current_idx]
-    if formatted then
-      vim.api.nvim_win_close(win, true)
-      callback(formatted.item)
-    end
-  end
-
-  -- Navigation
-  local function move(direction)
-    if #filtered_items == 0 then return end
-
-    if direction == 'down' then
-      current_idx = current_idx % #filtered_items + 1
-      current_idx = find_next_selectable(current_idx, 'down')
-    elseif direction == 'up' then
-      current_idx = current_idx - 1
-      if current_idx < 1 then current_idx = #filtered_items end
-      current_idx = find_next_selectable(current_idx, 'up')
-    end
-
-    lines, selectable, item_map, highlights = render()
-    update_display()
-  end
-
-  -- Keymaps
-  local map_opts = { noremap = true, silent = true, buffer = buf }
-
-  -- Navigation
-  vim.keymap.set('n', 'j', function() move('down') end, map_opts)
-  vim.keymap.set('n', 'k', function() move('up') end, map_opts)
-  vim.keymap.set('n', '<Down>', function() move('down') end, map_opts)
-  vim.keymap.set('n', '<Up>', function() move('up') end, map_opts)
-  vim.keymap.set('n', '<C-n>', function() move('down') end, map_opts)
-  vim.keymap.set('n', '<C-p>', function() move('up') end, map_opts)
-
-  -- Selection
-  vim.keymap.set('n', '<CR>', select, map_opts)
-  vim.keymap.set('n', '<Space>', select, map_opts)
-
-  -- Cancel
-  vim.keymap.set('n', 'q', function()
-    vim.api.nvim_win_close(win, true)
-    callback(nil)
-  end, map_opts)
-
-  vim.keymap.set('n', '<Esc>', function()
-    vim.api.nvim_win_close(win, true)
-    callback(nil)
-  end, map_opts)
-
-  -- Only enable search if explicitly requested
-  if enable_search then
-    -- Backspace: delete search char OR go back if search is empty
-    vim.keymap.set('n', '<BS>', function()
-      if search_term == '' and on_back then
-        vim.api.nvim_win_close(win, true)
-        on_back()
-      else
-        update_search('<BS>')
-      end
-    end, map_opts)
-
-    vim.keymap.set('n', '<C-u>', function() update_search('<C-u>') end, map_opts)
-
-    -- Type to search (alphanumeric and symbols)
-    for i = 32, 126 do
-      local char = string.char(i)
-      -- Don't override navigation keys
-      if char ~= ' ' and char ~= 'j' and char ~= 'k' and char ~= 'q' then
-        vim.keymap.set('n', char, function() update_search(char) end, map_opts)
-      end
-    end
   else
-    -- Backspace goes back if search is disabled and on_back is provided
-    if on_back then
-      vim.keymap.set('n', '<BS>', function()
-        vim.api.nvim_win_close(win, true)
-        on_back()
-      end, map_opts)
+    add(IND .. 'Not a git repository', { { 'JasonDesc', 0, -1 } })
+  end
+
+  if is_git then
+    -- Commits (max 5, tighter format)
+    hdr('Commits'); hr()
+    local ok2, log = git(root, 'log --format=">>>%h|%ar|%an|%s" -5')
+    if ok2 and log ~= '' then
+      for entry in log:gmatch('>>>([^\n]+)') do
+        local h, d, a, m = entry:match('([^|]+)|([^|]+)|([^|]+)|(.+)')
+        if h then
+          -- Shorten date: "2 weeks ago" -> "2w", "31 hours ago" -> "31h"
+          local ds  = d:gsub(' hours? ago', 'h'):gsub(' days? ago', 'd')
+              :gsub(' weeks? ago', 'w'):gsub(' months? ago', 'mo')
+              :gsub(' minutes? ago', 'm'):gsub('just now', 'now')
+          ds        = ds:sub(1, 5)
+          -- Author: first 7 chars
+          local as  = a:sub(1, 7)
+          local pre = IND .. h .. ' ' .. ds .. ' ' .. as .. ' '
+          local pw  = vim.fn.strdisplaywidth(pre)
+          local ms  = m:sub(1, math.max(2, width - pw - 1))
+          local p1  = #IND
+          local p2  = p1 + #h
+          local p3  = p2 + 1 + #ds
+          local p4  = p3 + 1 + #as
+          add(pre .. ms, {
+            { 'JasonGitHash',   p1,     p2 },
+            { 'JasonGitDate',   p2 + 1, p3 },
+            { 'JasonGitAuthor', p3 + 1, p4 },
+            { 'JasonGitMsg',    p4 + 1, -1 },
+          })
+        end
+      end
+    else
+      add(IND .. '(no commits)', { { 'JasonDesc', 0, -1 } })
+    end
+
+    -- Diff stat (no blank line before)
+    local _, diff = git(root, 'diff --stat HEAD')
+    if diff ~= '' then
+      hdr('Changes'); hr()
+      for ln in (diff .. '\n'):gmatch('([^\n]+)\n') do
+        local t = vim.trim(ln)
+        if t ~= '' then
+          local hg
+          if t:match('^%d+%s+files?') then
+            hg = 'JasonDesc'
+          elseif t:match('%+') and t:match('%-') then
+            hg = 'JasonDiffMod'
+          elseif t:match('%+') then
+            hg = 'JasonDiffAdd'
+          else
+            hg = 'JasonDiffDel'
+          end
+          add(IND .. t, { { hg, 0, -1 } })
+        end
+      end
     end
   end
 
-  -- CRITICAL: Prevent insert mode
-  vim.keymap.set('n', 'i', '<Nop>', map_opts)
-  vim.keymap.set('n', 'I', '<Nop>', map_opts)
+  hdr('Files'); hr()
 
-  if not enable_search then
-    vim.keymap.set('n', 'a', '<Nop>', map_opts)
-    vim.keymap.set('n', 'A', '<Nop>', map_opts)
+  -- .gitignore entry if it exists
+  local gitignore = root .. '/.gitignore'
+  if vim.fn.filereadable(gitignore) == 1 then
+    add(IND .. '[f] .gitignore', { { 'JasonFileNorm', 0, -1 } })
   end
 
-  vim.keymap.set('n', 'o', '<Nop>', map_opts)
-  vim.keymap.set('n', 'O', '<Nop>', map_opts)
+  -- Tree rooted at src/
+  local src = root .. '/src'
+  local tree = vim.fn.isdirectory(src) == 1
+      and build_tree(src, IND, 1, 4)
+      or {}
+
+  -- Prepend a synthetic src/ root entry if it exists
+  if vim.fn.isdirectory(src) == 1 then
+    add(IND .. '[d] src/', { { 'JasonFileDir', 0, -1 } })
+    -- indent the tree one level so it hangs under src/
+    for _, node in ipairs(tree) do
+      node.text     = '  ' .. node.text
+      node.conn_end = node.conn_end + 2
+    end
+  end
+
+  for _, node in ipairs(tree) do
+    local ge = node.conn_end
+    if node.overflow then
+      add(node.text, { { 'JasonDesc', 0, -1 } })
+    elseif node.is_dir then
+      add(node.text, { { 'JasonTreeConn', 0, ge }, { 'JasonFileDir', ge, -1 } })
+    elseif node.is_exe then
+      add(node.text, { { 'JasonTreeConn', 0, ge }, { 'JasonFileExe', ge, -1 } })
+    else
+      add(node.text, { { 'JasonTreeConn', 0, ge }, { 'JasonFileNorm', ge, -1 } })
+    end
+  end
+
+  return lines, hls
 end
 
--- Modern input popup
-function M.popup_input(opts, callback)
-  opts = opts or {}
-  local prompt = opts.prompt or 'Input'
-  local default = opts.default or ''
-  local width = opts.width or 60
-
-  local buf, win = create_popup(prompt, width, 5)
-
-  -- Create input line
-  vim.api.nvim_set_option_value('modifiable', true, { buf = buf })
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
-    '',
-    '  ' .. default,
-    '',
-    '  <CR> confirm  │  Esc cancel',
-    ''
-  })
-
-  -- Highlight
-  local ns = vim.api.nvim_create_namespace('marvin_input')
-  vim.api.nvim_buf_add_highlight(buf, ns, '@string', 1, 0, -1)
-  vim.api.nvim_buf_add_highlight(buf, ns, 'Comment', 3, 0, -1)
-
-  -- Make line editable
-  vim.api.nvim_set_option_value('modifiable', true, { buf = buf })
-
-  -- Position cursor at end of input
-  vim.api.nvim_win_set_cursor(win, { 2, #default + 2 })
-
-  -- Enter insert mode
-  vim.schedule(function()
-    vim.cmd('startinsert!')
-  end)
-
-  -- Submit handler
-  local function submit()
-    local lines = vim.api.nvim_buf_get_lines(buf, 1, 2, false)
-    local text = lines[1] and lines[1]:gsub('^%s*', '') or ''
-
-    vim.api.nvim_win_close(win, true)
-    callback(text ~= '' and text or nil)
+-- Main select
+function M.select(items, opts, callback)
+  opts                = opts or {}
+  local prompt        = opts.prompt or 'Select'
+  local enable_search = opts.enable_search ~= false
+  local show_preview  = opts.show_preview == true
+  local project       = opts.project
+  local format_fn     = opts.format_item or function(item)
+    return type(item) == 'table' and (item.label or tostring(item)) or tostring(item)
   end
 
-  -- Cancel handler
-  local function cancel()
-    vim.api.nvim_win_close(win, true)
-    callback(nil)
+  local all           = {}
+  for i, item in ipairs(items) do
+    all[i] = {
+      idx     = i,
+      item    = item,
+      display = format_fn(item),
+      desc    = type(item) == 'table' and item.desc or nil,
+      badge   = type(item) == 'table' and item.badge or nil,
+      is_sep  = type(item) == 'table' and (item.is_separator == true) or false,
+    }
+  end
+
+  local vis     = vim.deepcopy(all)
+  local search  = ''
+  local screen  = vim.api.nvim_list_uis()[1]
+
+  -- Layout
+  local PREV_W  = show_preview and 48 or 0
+  local LIST_W  = math.min(80, math.floor(screen.width * 0.55))
+  local TOTAL_W = LIST_W + (show_preview and PREV_W + 1 or 0)
+  TOTAL_W       = math.min(TOTAL_W, screen.width - 4)
+  if show_preview then PREV_W = TOTAL_W - LIST_W - 1 end
+  local INNER = LIST_W - 4
+
+  local function content_lines(v)
+    local n = #v
+    n = n + (enable_search and 4 or 1)
+    n = n + 5
+    return n
+  end
+
+  local function win_h()
+    return math.max(14, math.min(content_lines(vis), math.floor(screen.height * 0.82)))
+  end
+
+  local WIN_H = win_h()
+  local ROW   = math.floor((screen.height - WIN_H) / 2)
+  local COL   = math.floor((screen.width - TOTAL_W) / 2)
+
+  -- Buffers
+  local lbuf  = vim.api.nvim_create_buf(false, true)
+  local pbuf  = show_preview and vim.api.nvim_create_buf(false, true) or nil
+
+  local function ibuf(b)
+    vim.api.nvim_set_option_value('buftype', 'nofile', { buf = b })
+    vim.api.nvim_set_option_value('bufhidden', 'wipe', { buf = b })
+    vim.api.nvim_set_option_value('swapfile', false, { buf = b })
+    vim.api.nvim_set_option_value('modifiable', false, { buf = b })
+  end
+  ibuf(lbuf)
+  if pbuf then ibuf(pbuf) end
+
+  -- Windows
+  local lwin = vim.api.nvim_open_win(lbuf, true, {
+    relative  = 'editor',
+    width     = LIST_W,
+    height    = WIN_H,
+    row       = ROW,
+    col       = COL,
+    style     = 'minimal',
+    zindex    = 50,
+    border    = 'single',
+    title     = { { ' ' .. prompt .. ' ', 'JasonTitle' } },
+    title_pos = 'left',
+  })
+
+  vim.api.nvim_set_option_value('winhl',
+    'Normal:JasonWin,FloatBorder:JasonBorder',
+    { win = lwin })
+  for k, v in pairs({
+    cursorline = false,
+    wrap = false, number = false, relativenumber = false,
+    signcolumn = 'no', scrolloff = 0,
+  }) do
+    vim.api.nvim_set_option_value(k, v, { win = lwin })
+  end
+
+  -- Hide the real cursor while the menu is open, restore on close
+  local saved_guicursor = vim.o.guicursor
+  vim.api.nvim_set_hl(0, 'JasonHiddenCursor', { fg = C.bg, bg = C.bg, blend = 100 })
+  vim.o.guicursor = 'a:JasonHiddenCursor'
+  vim.api.nvim_create_autocmd('WinLeave', {
+    buffer   = lbuf,
+    once     = true,
+    callback = function()
+      vim.o.guicursor = saved_guicursor
+    end,
+  })
+
+  local pwin = nil
+  if pbuf then
+    pwin = vim.api.nvim_open_win(pbuf, false, {
+      relative  = 'editor',
+      width     = PREV_W,
+      height    = WIN_H,
+      row       = ROW,
+      col       = COL + LIST_W + 1,
+      style     = 'minimal',
+      zindex    = 50,
+      border    = 'single',
+      title     = { { ' Project ', 'JasonPrevTitle' } },
+      title_pos = 'center',
+    })
+    vim.api.nvim_set_option_value('winhl',
+      'Normal:JasonPrevWin,FloatBorder:JasonPrevBorder', { win = pwin })
+    for k, v in pairs({
+      wrap = false, number = false, relativenumber = false, scrolloff = 0,
+    }) do
+      vim.api.nvim_set_option_value(k, v, { win = pwin })
+    end
+  end
+
+  -- State
+  local ns      = vim.api.nvim_create_namespace('jason_list')
+  local sel_pos = 1 -- rank among selectables (1-based, never counts separators)
+  local vt      = 1 -- view_top: rank of the first visible selectable
+
+  -- Number of selectable (non-separator) items in vis[]
+  local function sel_total()
+    local n = 0
+    for _, f in ipairs(vis) do if not f.is_sep then n = n + 1 end end
+    return n
+  end
+
+  -- How many item rows fit between header and footer
+  local function visible_rows()
+    local header = enable_search and 4 or 1
+    local footer = 5
+    return math.max(1, WIN_H - header - footer)
+  end
+
+  -- Render
+  local function redraw()
+    local lines, hls = {}, {}
+    local VR         = visible_rows()
+    local total      = sel_total()
+
+    -- Clamp sel_pos and vt
+    sel_pos          = math.max(1, math.min(sel_pos, math.max(1, total)))
+    if sel_pos < vt then vt = sel_pos end
+    if sel_pos > vt + VR - 1 then vt = sel_pos - VR + 1 end
+    vt = math.max(1, vt)
+
+    local function ahl(l, h, cs, ce)
+      hls[#hls + 1] = { line = l, hl = h, cs = cs, ce = ce }
+    end
+
+    if enable_search then
+      lines[#lines + 1] = ''
+      if search == '' then
+        lines[#lines + 1] = '  _'
+        ahl(#lines - 1, 'JasonSearchBox', 0, -1)
+      else
+        lines[#lines + 1] = '  ' .. search .. '_'
+        ahl(#lines - 1, 'JasonSearch', 0, -1)
+      end
+      lines[#lines + 1] = string.rep('-', LIST_W)
+      ahl(#lines - 1, 'JasonSepLine', 0, -1)
+      lines[#lines + 1] = ''
+    else
+      lines[#lines + 1] = ''
+    end
+
+    -- Desc alignment
+    local max_lw = 0
+    for _, f in ipairs(vis) do
+      if not f.is_sep and f.desc then
+        max_lw = math.max(max_lw, vim.fn.strdisplaywidth(f.display) + 4)
+      end
+    end
+    local desc_col = math.min(max_lw, math.floor(INNER * 0.55))
+
+    if #vis == 0 then
+      lines[#lines + 1] = ''
+      lines[#lines + 1] = '  No matches found'
+      ahl(#lines - 1, 'JasonDesc', 0, -1)
+    else
+      local view_end  = math.min(vt + VR - 1, total)
+      local show_up   = vt > 1
+      local show_down = view_end < total
+
+      local rank      = 0
+
+      for _, f in ipairs(vis) do
+        if f.is_sep then
+          -- Full-width separator with centered label (Marvin style)
+          local ln          = #lines
+          local t           = ' ' .. f.display .. ' '
+          local tw          = vim.fn.strdisplaywidth(t)
+          local rem         = math.max(0, LIST_W - tw)
+          local ll          = math.floor(rem / 2)
+          local lr          = rem - ll
+          lines[#lines + 1] = string.rep('-', ll) .. t .. string.rep('-', lr)
+          ahl(ln, 'JasonSepLine', 0, -1)
+          ahl(ln, 'JasonSepLabel', ll, ll + tw)
+        else
+          rank = rank + 1
+          if rank >= vt and rank <= view_end then
+            local is_sel = (rank == sel_pos)
+            -- Marvin uses >> for selected, two spaces for unselected
+            local caret  = is_sel and '>> ' or '   '
+            local label  = f.display
+            local lw     = vim.fn.strdisplaywidth(label)
+            local body
+
+            if f.desc then
+              local gap = math.max(2, desc_col - lw)
+              -- Marvin style: label + spaces + bullet + desc
+              body = label .. string.rep(' ', gap) .. '* ' .. f.desc
+            else
+              body = label
+            end
+            if f.badge then body = body .. '  ' .. f.badge end
+
+            local row = caret .. body
+            local rw  = vim.fn.strdisplaywidth(row)
+            if rw < LIST_W - 2 then
+              row = row .. string.rep(' ', LIST_W - 2 - rw)
+            end
+
+            local ln = #lines
+            lines[#lines + 1] = row
+
+            if is_sel then
+              ahl(ln, 'JasonSelected', 0, -1)
+            else
+              ahl(ln, 'JasonItem', 3, 3 + lw)
+              if f.desc then
+                local dc = 3 + lw + math.max(2, desc_col - lw) + 2
+                ahl(ln, 'JasonDesc', dc, -1)
+              end
+              if f.badge then
+                ahl(ln, 'JasonBadge', -vim.fn.strdisplaywidth(f.badge) - 2, -1)
+              end
+            end
+
+            if rank == vt and show_up then
+              ahl(ln, 'JasonFooter', LIST_W - 4, LIST_W - 3)
+            end
+            if rank == view_end and show_down then
+              ahl(ln, 'JasonFooter', LIST_W - 4, LIST_W - 3)
+            end
+          end
+        end
+      end
+    end
+
+    -- Footer (Marvin style)
+    lines[#lines + 1] = ''
+    lines[#lines + 1] = string.rep('-', LIST_W)
+    ahl(#lines - 1, 'JasonSepLine', 0, -1)
+    local info = string.format('  %d/%d items', sel_pos, total)
+    if search ~= '' then info = info .. '  "' .. search .. '"' end
+    lines[#lines + 1] = info
+    ahl(#lines - 1, 'JasonFooter', 0, -1)
+    lines[#lines + 1] = '  j/k Navigate | <CR> Select | <Esc> Cancel'
+    ahl(#lines - 1, 'JasonFooterKey', 0, -1)
+    lines[#lines + 1] = ''
+
+    vim.api.nvim_set_option_value('modifiable', true, { buf = lbuf })
+    vim.api.nvim_buf_set_lines(lbuf, 0, -1, false, lines)
+    vim.api.nvim_set_option_value('modifiable', false, { buf = lbuf })
+    vim.api.nvim_buf_clear_namespace(lbuf, ns, 0, -1)
+    for _, h in ipairs(hls) do
+      pcall(vim.api.nvim_buf_add_highlight, lbuf, ns, h.hl, h.line, h.cs, h.ce)
+    end
+
+    -- Park the real cursor at line 1 so Neovim is happy; the caret is visual-only
+    pcall(vim.api.nvim_win_set_cursor, lwin, { 1, 0 })
+  end
+
+  -- Navigation
+  local function move(d)
+    local total = sel_total()
+    if total == 0 then return end
+    if d == 'dn' then
+      sel_pos = sel_pos % total + 1
+    elseif d == 'up' then
+      sel_pos = sel_pos - 1; if sel_pos < 1 then sel_pos = total end
+    elseif d == 'pgd' then
+      sel_pos = math.min(sel_pos + 8, total)
+    elseif d == 'pgu' then
+      sel_pos = math.max(sel_pos - 8, 1)
+    elseif d == 'top' then
+      sel_pos = 1
+    elseif d == 'bot' then
+      sel_pos = total
+    end
+    redraw()
+  end
+
+  local function do_search(c)
+    if c == '<BS>' then
+      search = search:sub(1, -2)
+    elseif c == '<C-u>' then
+      search = ''
+    else
+      search = search .. c
+    end
+
+    vis = {}
+    for _, f in ipairs(all) do
+      if f.is_sep then
+        if search == '' then vis[#vis + 1] = vim.deepcopy(f) end
+      else
+        local ok, sc = fuzzy(f.display, search)
+        if ok then
+          local fc = vim.deepcopy(f); fc.score = sc; vis[#vis + 1] = fc
+        end
+      end
+    end
+    if search ~= '' then
+      table.sort(vis, function(a, b) return (a.score or 0) > (b.score or 0) end)
+    end
+    sel_pos  = 1
+    view_top = 1
+
+    local nh = win_h()
+    pcall(vim.api.nvim_win_set_height, lwin, nh)
+    if pwin then pcall(vim.api.nvim_win_set_height, pwin, nh) end
+    redraw()
+  end
+
+  local function close()
+    vim.o.guicursor = saved_guicursor
+    pcall(vim.api.nvim_win_close, lwin, true)
+    if pwin then pcall(vim.api.nvim_win_close, pwin, true) end
+  end
+
+  local function pick()
+    local rank = 0
+    for i, f in ipairs(vis) do
+      if not f.is_sep then
+        rank = rank + 1
+        if rank == sel_pos then
+          local chosen = f.item
+          close()
+          callback(chosen)
+          return
+        end
+      end
+    end
   end
 
   -- Keymaps
-  local map_opts = { noremap = true, silent = true, buffer = buf }
+  local mo = { noremap = true, silent = true, buffer = lbuf }
+  vim.keymap.set('n', 'j', function() move('dn') end, mo)
+  vim.keymap.set('n', 'k', function() move('up') end, mo)
+  vim.keymap.set('n', '<Down>', function() move('dn') end, mo)
+  vim.keymap.set('n', '<Up>', function() move('up') end, mo)
+  vim.keymap.set('n', '<C-d>', function() move('pgd') end, mo)
+  vim.keymap.set('n', '<C-u>', function() move('pgu') end, mo)
+  vim.keymap.set('n', 'G', function() move('bot') end, mo)
+  vim.keymap.set('n', 'gg', function() move('top') end, mo)
+  vim.keymap.set('n', '<CR>', pick, mo)
+  vim.keymap.set('n', '<Space>', pick, mo)
+  vim.keymap.set('n', 'l', pick, mo)
+  vim.keymap.set('n', '<Esc>', function()
+    close(); callback(nil)
+  end, mo)
+  vim.keymap.set('n', 'q', function()
+    close(); callback(nil)
+  end, mo)
 
-  vim.keymap.set('i', '<CR>', submit, map_opts)
-  vim.keymap.set('i', '<Esc>', cancel, map_opts)
-  vim.keymap.set('i', '<C-c>', cancel, map_opts)
-
-  vim.keymap.set('n', '<CR>', submit, map_opts)
-  vim.keymap.set('n', '<Esc>', cancel, map_opts)
-  vim.keymap.set('n', 'q', cancel, map_opts)
-
-  -- Prevent moving to other lines
-  vim.keymap.set('i', '<Up>', '<Nop>', map_opts)
-  vim.keymap.set('i', '<Down>', '<Nop>', map_opts)
-end
-
--- Public API
-function M.select(items, opts, callback)
-  -- Pass through on_back if provided
-  M.popup_select(items, opts, callback)
-end
-
-function M.input(opts, callback)
-  M.popup_input(opts, callback)
-end
-
-function M.notify(message, level, opts)
-  opts = opts or {}
-  level = level or vim.log.levels.INFO
-
-  if M.backend == 'snacks' then
-    local ok, snacks = pcall(require, 'snacks')
-    if ok then
-      snacks.notify(message, {
-        level = M.level_to_snacks(level),
-        title = opts.title or 'Marvin',
-      })
-      return
-    end
-  end
-
-  vim.notify(message, level, {
-    title = opts.title or 'Marvin',
-  })
-end
-
-function M.level_to_snacks(level)
-  if level == vim.log.levels.ERROR then return 'error' end
-  if level == vim.log.levels.WARN then return 'warn' end
-  if level == vim.log.levels.INFO then return 'info' end
-  return 'debug'
-end
-
--- Maven goal menu
-function M.show_goal_menu(on_back)
-  local project = require('marvin.project')
-
-  if not project.validate_environment() then
-    return
-  end
-
-  local goals = M.get_common_goals()
-
-  M.select(goals, {
-    prompt = 'Maven Goal',
-    on_back = on_back,
-    format_item = function(goal)
-      return goal.label
-    end,
-  }, function(choice)
-    if not choice then return end
-    if choice.needs_profile then
-      M.show_profile_menu(choice.goal, function()
-        M.show_goal_menu(on_back)
-      end)
-    elseif choice.needs_options then
-      M.show_options_menu(choice.goal)
-    else
-      local executor = require('marvin.executor')
-      executor.run(choice.goal)
-    end
-  end)
-end
-
-function M.get_common_goals()
-  return {
-    {
-      id = 'separator_build',
-      label = 'Build Lifecycle',
-      is_separator = true
-    },
-    {
-      goal = 'clean',
-      label = 'Clean',
-      icon = '🧹',
-      desc = 'Delete target/ directory',
-      shortcut = 'c'
-    },
-    {
-      goal = 'compile',
-      label = 'Compile',
-      icon = '⚙️',
-      desc = 'Compile source code',
-      shortcut = 'C'
-    },
-    {
-      goal = 'test',
-      label = 'Test',
-      icon = '🧪',
-      desc = 'Run unit tests',
-      shortcut = 't'
-    },
-    {
-      goal = 'package',
-      label = 'Package',
-      icon = '📦',
-      desc = 'Create JAR/WAR file',
-      shortcut = 'p'
-    },
-    {
-      goal = 'verify',
-      label = 'Verify',
-      icon = '✅',
-      desc = 'Run integration tests',
-      shortcut = 'v'
-    },
-    {
-      goal = 'install',
-      label = 'Install',
-      icon = '💾',
-      desc = 'Install to ~/.m2/repository',
-      shortcut = 'i'
-    },
-
-    {
-      id = 'separator_common',
-      label = 'Common Tasks',
-      is_separator = true
-    },
-    {
-      goal = 'clean install',
-      label = 'Clean & Install',
-      icon = '🔄',
-      desc = 'Full rebuild and install',
-      shortcut = 'I'
-    },
-    {
-      goal = 'clean package',
-      label = 'Clean & Package',
-      icon = '📦',
-      desc = 'Fresh build to JAR',
-      shortcut = 'P'
-    },
-    {
-      goal = 'test -DskipTests',
-      label = 'Skip Tests',
-      icon = '⏭️',
-      desc = 'Build without running tests',
-      shortcut = 's'
-    },
-
-    {
-      id = 'separator_deps',
-      label = 'Dependencies',
-      is_separator = true
-    },
-    {
-      goal = 'dependency:tree',
-      label = 'Dependency Tree',
-      icon = '🌳',
-      desc = 'Show full dependency graph',
-      shortcut = 'd'
-    },
-    {
-      goal = 'dependency:resolve',
-      label = 'Resolve Dependencies',
-      icon = '📥',
-      desc = 'Download all dependencies',
-      shortcut = 'r'
-    },
-    {
-      goal = 'dependency:analyze',
-      label = 'Analyze Dependencies',
-      icon = '🔍',
-      desc = 'Find unused/undeclared deps',
-      shortcut = 'a'
-    },
-    {
-      goal = 'versions:display-dependency-updates',
-      label = 'Check for Updates',
-      icon = '🆙',
-      desc = 'Find newer dependency versions',
-      shortcut = 'u'
-    },
-
-    {
-      id = 'separator_info',
-      label = 'Information',
-      is_separator = true
-    },
-    {
-      goal = 'help:effective-pom',
-      label = 'Effective POM',
-      icon = '📄',
-      desc = 'Show resolved configuration',
-      shortcut = 'e'
-    },
-    {
-      goal = 'help:effective-settings',
-      label = 'Effective Settings',
-      icon = '⚙️',
-      desc = 'Show Maven settings',
-      shortcut = 'S'
-    },
-
-    {
-      id = 'separator_custom',
-      label = 'Custom',
-      is_separator = true
-    },
-    {
-      goal = nil,
-      label = 'Custom Goal',
-      icon = '⚡',
-      desc = 'Enter any Maven command',
-      needs_options = true,
-      shortcut = 'g'
-    },
-  }
-end
-
-function M.show_profile_menu(goal, on_back)
-  local project = require('marvin.project').get_project()
-
-  if not project or not project.info or #project.info.profiles == 0 then
-    vim.notify('No profiles found in pom.xml', vim.log.levels.WARN)
-    local executor = require('marvin.executor')
-    executor.run(goal)
-    return
-  end
-
-  local profiles = {}
-  table.insert(profiles, { id = nil, label = '(default)', desc = 'No profile selected' })
-
-  for _, profile_id in ipairs(project.info.profiles) do
-    table.insert(profiles, { id = profile_id, label = profile_id, desc = 'Maven profile' })
-  end
-
-  M.select(profiles, {
-    prompt = 'Select Profile',
-    on_back = on_back,
-  }, function(choice)
-    if not choice then return end
-
-    local executor = require('marvin.executor')
-    executor.run(goal, { profile = choice.id })
-  end)
-end
-
-function M.show_options_menu(goal)
-  M.input({
-    prompt = 'Maven goal(s)',
-    default = '',
-  }, function(custom_goal)
-    if not custom_goal or custom_goal == '' then
-      return
-    end
-
-    M.input({
-      prompt = 'Additional options (optional)',
-      default = '',
-    }, function(extra_opts)
-      local executor = require('marvin.executor')
-
-      local full_goal = custom_goal
-      if extra_opts and extra_opts ~= '' then
-        full_goal = full_goal .. ' ' .. extra_opts
+  if enable_search then
+    local nav = { j = true, k = true, q = true, l = true, G = true, g = true }
+    vim.keymap.set('n', '<BS>', function() do_search('<BS>') end, mo)
+    vim.keymap.set('n', '<C-u>', function() do_search('<C-u>') end, mo)
+    for i = 32, 126 do
+      local c = string.char(i)
+      if not nav[c] then
+        vim.keymap.set('n', c, function() do_search(c) end, mo)
       end
+    end
+  end
 
-      executor.run(full_goal)
+  for _, k in ipairs({ 'i', 'I', 'a', 'A', 'o', 'O', 'c', 'C', 's', 'S' }) do
+    vim.keymap.set('n', k, '<Nop>', mo)
+  end
+
+  -- Initial draw
+  redraw()
+
+  if pbuf and project then
+    vim.schedule(function()
+      local plines, phls = build_preview(project, PREV_W - 2)
+      local pns = vim.api.nvim_create_namespace('jason_prev')
+      vim.api.nvim_set_option_value('modifiable', true, { buf = pbuf })
+      vim.api.nvim_buf_set_lines(pbuf, 0, -1, false, plines)
+      vim.api.nvim_set_option_value('modifiable', false, { buf = pbuf })
+      vim.api.nvim_buf_clear_namespace(pbuf, pns, 0, -1)
+      for _, h in ipairs(phls) do
+        pcall(vim.api.nvim_buf_add_highlight, pbuf, pns, h.hl, h.line, h.cs, h.ce)
+      end
     end)
-  end)
+  end
 end
 
-function M.show_advanced_menu()
-  local options = {
-    { goal = 'clean install -DskipTests=true', label = 'Clean Install (skip tests)', icon = '⚡' },
-    { goal = 'clean install -U', label = 'Clean Install (force update)', icon = '🔄' },
-    { goal = 'clean package -Dmaven.test.skip=true', label = 'Package (skip tests)', icon = '📦' },
-    { goal = 'dependency:tree -Dverbose', label = 'Verbose Dependency Tree', icon = '🌳' },
-    { goal = 'dependency:analyze', label = 'Analyze Dependencies', icon = '🔍' },
-    { goal = 'versions:display-dependency-updates', label = 'Check for Updates', icon = '🆙' },
-    { goal = 'help:effective-settings', label = 'Show Effective Settings', icon = '⚙️' },
-  }
+function M.input(opts, cb)
+  opts = opts or {}
+  vim.ui.input({ prompt = (opts.prompt or 'Input') .. ': ', default = opts.default or '' }, cb)
+end
 
-  M.select(options, {
-    prompt = 'Advanced Options',
-  }, function(choice)
-    if not choice then return end
-
-    local executor = require('marvin.executor')
-    executor.run(choice.goal)
-  end)
+function M.notify(msg, level)
+  vim.notify(msg, level or vim.log.levels.INFO, { title = 'Jason' })
 end
 
 return M
