@@ -43,6 +43,16 @@ M.defaults = {
     compiler = 'g++',
     standard = 'c++17',
   },
+
+  graalvm = {
+    extra_build_args = '',               -- extra flags passed to native-image
+    output_dir       = 'target/native',  -- relative to project root
+    no_fallback      = true,             -- --no-fallback (pure native, no JVM backup)
+    g1gc             = false,            -- --gc=G1  (GraalVM EE only)
+    pgo              = 'none',           -- 'none' | 'instrument' | 'optimize'
+    report_size      = true,             -- -H:+PrintAnalysisCallTree
+    agent_output_dir = 'src/main/resources/META-INF/native-image',
+  },
 }
 
 function M.setup(opts)

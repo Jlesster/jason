@@ -84,6 +84,20 @@ function M.build_menu(project, status)
       add(item('dependencies', '󰙅', 'Dependencies', './gradlew dependencies'))
       add(item('tasks', '󰒓', 'Tasks', './gradlew tasks'))
     end
+
+    -- GraalVM section (shown whenever language is java, grayed badge when unavailable)
+    local graal    = require('jason.graalvm')
+    local has_ni   = graal.native_image_bin() ~= nil
+    local ni_badge = has_ni and '●' or '○ needs install'
+    add(sep('GraalVM'))
+    add(item('graal_build_native', 'ó°¡', 'Build Native', 'Compile to native binary', ni_badge))
+    add(item('graal_run_native', '▶', 'Run Native', 'Execute native binary'))
+    add(item('graal_build_run', 'ó°"·', 'Build & Run', 'Native build then run'))
+    add(item('graal_agent_run', 'ó°ˆ™', 'Agent Run', 'Collect reflection config'))
+    add(item('graal_info', 'ó°†', 'GraalVM Info', 'Show status & config'))
+    if not has_ni then
+      add(item('graal_install_ni', 'ó°š°', 'Install native-image', 'Run: gu install native-image'))
+    end
   elseif lang == 'cpp' then
     add(sep('C++'))
     add(item('clang_format', '󰉣', 'Format', 'clang-format -i'))
@@ -238,6 +252,29 @@ function M.handle_action(id, project)
     run('Verify', function() ex.custom('go mod verify') end)
 
     -- Java
+  elseif id == 'graal_build_native' then
+    run('Native Build', function()
+      require('jason.graalvm').build_native(project)
+    end)
+  elseif id == 'graal_run_native' then
+    run('Run Native', function()
+      require('jason.graalvm').run_native(project)
+    end)
+  elseif id == 'graal_build_run' then
+    run('Native Build & Run', function()
+      require('jason.graalvm').build_and_run_native(project)
+    end)
+  elseif id == 'graal_agent_run' then
+    run('Agent Run', function()
+      require('jason.graalvm').run_with_agent(project)
+    end)
+  elseif id == 'graal_info' then
+    require('jason.graalvm').show_info()
+    return -- no history entry needed
+  elseif id == 'graal_install_ni' then
+    run('Install native-image', function()
+      require('jason.graalvm').install_native_image(project)
+    end)
   elseif id == 'dependency_tree' then
     run('Dep Tree', function() ex.custom('mvn dependency:tree') end)
   elseif id == 'effective_pom' then
